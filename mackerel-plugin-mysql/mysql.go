@@ -84,6 +84,13 @@ var graphdef = map[string](mp.Graphs){
 			mp.Metrics{Name: "Bytes_received", Label: "Received Bytes", Diff: true, Stacked: false},
 		},
 	},
+	"mysql.prepare_statement": mp.Graphs{
+		Label: "MySQL Prepare Statement",
+		Unit:  "integer",
+		Metrics: [](mp.Metrics){
+			mp.Metrics{Name: "Prepared_stmt_count", Label: "Prepared stmt Count", Diff: false, Stacked: false},
+		},
+	},
 }
 
 // MySQLPlugin mackerel plugin for MySQL
