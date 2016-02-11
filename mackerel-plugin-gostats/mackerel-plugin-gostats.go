@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/fukata/golang-stats-api-handler"
@@ -16,6 +17,7 @@ import (
 type GostatsPlugin struct {
 	URI    string
 	Prefix string
+	Header string
 }
 
 /*
@@ -104,7 +106,14 @@ func (m GostatsPlugin) GraphDefinition() map[string](mp.Graphs) {
 
 // FetchMetrics interface for mackerelplugin
 func (m GostatsPlugin) FetchMetrics() (map[string]interface{}, error) {
-	resp, err := http.Get(m.URI)
+	req, _ := http.NewRequest("GET", m.URI, nil)
+	if m.Header != "" {
+		h := strings.Split(string(m.Header), ":")
+		req.Header.Set(h[0], h[1])
+	}
+
+	client := new(http.Client)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -147,12 +156,14 @@ func main() {
 	optHost := flag.String("host", "localhost", "Hostname")
 	optPort := flag.String("port", "8080", "Port")
 	optPath := flag.String("path", "/api/stats", "Path")
+	optHeader := flag.String("header", "", "Header")
 	optPrefix := flag.String("metric-key-prefix", "gostats", "Metric key prefix")
 	optTempfile := flag.String("tempfile", "", "Temp file name")
 	flag.Parse()
 
 	gosrv := GostatsPlugin{
 		Prefix: *optPrefix,
+		Header: *optHeader,
 	}
 	if *optURI != "" {
 		gosrv.URI = *optURI
@@ -167,5 +178,9 @@ func main() {
 		helper.Tempfile = fmt.Sprintf("/tmp/mackerel-plugin-gosrv")
 	}
 
-	helper.Run()
+	if os.Getenv("MACKEREL_AGENT_PLUGIN_META") != "" {
+		helper.OutputDefinitions()
+	} else {
+		helper.OutputValues()
+	}
 }
